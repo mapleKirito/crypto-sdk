@@ -7,7 +7,7 @@
 
     <groupId>com.ai.extender</groupId>
     <artifactId>crypto-sdk</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Crypto SDK</name>
