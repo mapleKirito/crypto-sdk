@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.ai.extender.crypto.config.CryptoAutoConfiguration

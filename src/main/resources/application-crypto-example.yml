@@ -1,0 +1,39 @@
+# Crypto SDK 配置示例
+# 详细说明请参考 README.md
+
+crypto:
+  # 全局开关：是否启用加密功能
+  enabled: true
+
+  # RSA密钥配置
+  # 使用原则：
+  # - 公钥：用于加密数据
+  # - 私钥：用于解密数据
+  key:
+    # RSA公钥（Base64编码，单行）
+    # 用途：加密数据（请求或响应）
+    # 生产环境建议使用环境变量：${CRYPTO_PUBLIC_KEY}
+    public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
+
+    # RSA私钥（Base64编码，单行）
+    # 用途：解密数据（请求或响应）
+    # 生产环境建议使用环境变量：${CRYPTO_PRIVATE_KEY}
+    private-key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQ...
+
+    # 是否自动生成密钥对（仅开发环境使用）
+    # 生产环境必须设置为 false
+    auto-generate: false
+
+  # 签名验证配置（防重放、防篡改）
+  signature:
+    # 是否启用签名验证
+    enabled: true
+
+    # HMAC-SHA256签名密钥（至少32字符）
+    # 双方共享，用于签名验证
+    # 生产环境建议使用环境变量：${CRYPTO_SIGNATURE_SECRET}
+    secret: your-32-char-signature-secret-key
+
+    # 时间戳有效期（毫秒）
+    # 默认5分钟，超过此时间的请求将被拒绝
+    timestamp-validity: 300000

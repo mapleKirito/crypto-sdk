@@ -1,0 +1,37 @@
+# Crypto Client Configuration
+# 客户端配置文件
+
+# 加密配置
+crypto-client:
+  # 是否启用加密（开发环境可关闭）
+  enabled: true
+
+  # 服务端RSA公钥（用于加密请求）
+  # 从服务端获取，必须使用服务端公钥加密请求
+  server-public-key: |
+    MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+xxxxx服务端公钥xxxxx
+
+  # 客户端RSA私钥（用于解密响应）
+  # 客户端自己生成，公钥需要提前注册到服务端
+  client-private-key: |
+    MIICXAIBAAKBgQC+xxxxx客户端私钥xxxxx
+
+  # 客户端RSA公钥（服务端用于加密响应）
+  # 客户端自己生成，公钥需要提前注册到服务端
+  client-public-key: |
+    MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+xxxxx客户端公钥xxxxx
+
+  # 签名密钥（HMAC-SHA256）
+  # 与服务端共享，用于防篡改
+  signature-secret: your-32-char-signature-secret-key
+
+  # 是否启用签名
+  signature-enabled: true
+
+  # 请求超时时间（毫秒）
+  timeout: 30000
+
+# 服务端地址配置
+server:
+  port: 8081
+  address: http://localhost:8080
