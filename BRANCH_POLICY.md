@@ -7,7 +7,7 @@ master              ← 生产稳定版本（受保护）
   └── release/1.1.x ← 版本发布分支（受保护）
         └── fix/*   ← 缺陷修复分支（审核合并到 release）
 
-dev                 ← 开发主线（SNAPSHOT 版本）
+dev                 ← 开发主线（受保护，SNAPSHOT 版本）
   ├── feature/*     ← 新功能开发分支
   └── fix/*         ← 缺陷修复分支
 ```
@@ -26,14 +26,14 @@ dev                 ← 开发主线（SNAPSHOT 版本）
 | **合并来源** | 仅接受 `release/x.x.x` 分支的 Pull Request 合并 |
 | **Tag** | 每次合并后打 Tag，如 `v1.1.1` |
 
-### 2. `dev` — 开发分支
+### 2. `dev` — 开发分支（受保护）
 
 | 属性 | 规则 |
 |------|------|
 | **用途** | 开发主线，包含最新已验证的功能代码 |
 | **版本号** | SNAPSHOT 版本号，如 `1.1.2-SNAPSHOT`、`1.2.0-SNAPSHOT` |
-| **推送权限** | 开发人员可推送 |
-| **合并来源** | 接受 `feature/*`、`fix/*` 分支的合并 |
+| **推送权限** | **禁止所有人直接推送**（包括仓库 owner） |
+| **合并来源** | 仅接受 `feature/*`、`fix/*` 分支的 Pull Request 合并 |
 | **下游** | 功能稳定后合并到 `release/x.x.x`，最终进入 `master` |
 
 ### 3. `release/x.x.x` — 版本发布分支（受保护）
@@ -136,6 +136,12 @@ master → hotfix/xxx → 修复完成 → PR 合并到 master → 打 Tag
 - ✅ 开启合并请求审核（可选拥有写入权限的用户）
 - ✅ 合并前要求通过 CI 检查（如有）
 
+### dev 分支保护
+
+- 保护分支：`dev`
+- ✅ 禁止强制推送
+- ✅ 开启合并请求审核
+
 ### release/* 分支保护
 
 - 保护分支：`release/*`
@@ -152,18 +158,16 @@ git checkout dev
 git pull origin dev
 git checkout -b feature/your-feature
 
-# 功能完成后合并到 dev
-git checkout dev
-git pull origin dev
-git merge feature/your-feature
-git push origin dev
+# 功能完成后推送到远程，然后通过 Gitee Web UI 提交 PR 到 dev
+git push origin feature/your-feature
 
 # 从 release 创建修复分支
 git checkout release/1.1.x
 git pull origin release/1.1.x
 git checkout -b fix/your-fix
 
-# 修复完成后提交 PR 到 release/1.1.x（通过 Gitee Web UI）
+# 修复完成后推送到远程，然后通过 Gitee Web UI 提交 PR 到 release/1.1.x
+git push origin fix/your-fix
 
 # release 验证通过后合并到 master（通过 Gitee Web UI 提交 PR）
 
