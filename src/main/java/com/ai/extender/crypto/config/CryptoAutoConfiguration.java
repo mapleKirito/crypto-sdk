@@ -34,14 +34,6 @@ import org.springframework.context.annotation.Configuration;
 public class CryptoAutoConfiguration {
 
     /**
-     * 配置 ObjectMapper
-     */
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
-    /**
      * 配置 CryptoAspect
      * 提供安全请求头生成工具方法
      */
