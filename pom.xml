@@ -5,14 +5,14 @@
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.gitee.maplekirito</groupId>
+    <groupId>io.github.maplekirito</groupId>
     <artifactId>crypto-sdk</artifactId>
     <version>1.1.2</version>
     <packaging>jar</packaging>
 
     <name>Crypto SDK</name>
     <description>API加解密SDK - 支持RSA+AES混合加密、请求签名验证，兼容JDK 8/11/17/21</description>
-    <url>https://gitee.com/maplekirito/crypto-sdk</url>
+    <url>https://github.com/mapleKirito/crypto-sdk</url>
 
     <licenses>
         <license>
@@ -25,15 +25,15 @@
     <developers>
         <developer>
             <name>mapleKirito</name>
-            <email>mapleKirito@gitee.com</email>
-            <url>https://gitee.com/maplekirito</url>
+            <email>mapleKirito@users.noreply.github.com</email>
+            <url>https://github.com/mapleKirito</url>
         </developer>
     </developers>
 
     <scm>
-        <url>https://gitee.com/maplekirito/crypto-sdk</url>
-        <connection>scm:git:https://gitee.com/maplekirito/crypto-sdk.git</connection>
-        <developerConnection>scm:git:https://gitee.com/maplekirito/crypto-sdk.git</developerConnection>
+        <url>https://github.com/mapleKirito/crypto-sdk</url>
+        <connection>scm:git:https://github.com/mapleKirito/crypto-sdk.git</connection>
+        <developerConnection>scm:git:https://github.com/mapleKirito/crypto-sdk.git</developerConnection>
         <tag>v${project.version}</tag>
     </scm>
 
