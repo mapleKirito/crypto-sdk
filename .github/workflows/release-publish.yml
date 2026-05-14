@@ -1,0 +1,156 @@
+name: Release Publish to Maven Central
+
+on:
+  push:
+    branches:
+      - 'release/**'
+  pull_request:
+    types:
+      - closed
+    branches:
+      - 'release/**'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect branch and version
+        id: version-check
+        run: |
+          # 获取当前版本号
+          CURRENT_VERSION=$(grep -oP '(?<=<version>)[^<]+' pom.xml | head -1)
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+
+          # 检测是否为 SNAPSHOT 版本
+          if [[ "$CURRENT_VERSION" == *"SNAPSHOT"* ]]; then
+            echo "is_snapshot=true" >> $GITHUB_OUTPUT
+            echo "SNAPSHOT version detected, skipping publish"
+          else
+            echo "is_snapshot=false" >> $GITHUB_OUTPUT
+          fi
+
+          # 检测版本号格式
+          if [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "version_valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "version_valid=false" >> $GITHUB_OUTPUT
+          fi
+
+          # 获取当前分支名
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "Branch: $BRANCH_NAME"
+
+          # 判断是否是新分支（通过检查该分支的提交数）
+          # 获取该分支在 remote 的历史提交数
+          git fetch origin $BRANCH_NAME --depth=2 2>/dev/null || true
+          
+          # 检查是否能获取到上一个提交的 pom.xml
+          if git show HEAD~1:pom.xml > /dev/null 2>&1; then
+            # 有历史提交，获取上一个版本的版本号
+            PREVIOUS_VERSION=$(git show HEAD~1:pom.xml | grep -oP '(?<=<version>)[^<]+' | head -1)
+            echo "previous_version=$PREVIOUS_VERSION" >> $GITHUB_OUTPUT
+            echo "Previous version: $PREVIOUS_VERSION"
+            echo "is_new_branch=false" >> $GITHUB_OUTPUT
+            
+            # 检测版本号是否变化
+            if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+              echo "version_changed=true" >> $GITHUB_OUTPUT
+              echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
+            else
+              echo "version_changed=false" >> $GITHUB_OUTPUT
+              echo "Version unchanged: $CURRENT_VERSION"
+            fi
+          else
+            # 没有历史提交，说明是新分支
+            echo "is_new_branch=true" >> $GITHUB_OUTPUT
+            echo "New branch detected: $BRANCH_NAME"
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+            echo "previous_version=N/A" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip conditions check
+        run: |
+          IS_NEW_BRANCH="${{ steps.version-check.outputs.is_new_branch }}"
+          VERSION_CHANGED="${{ steps.version-check.outputs.version_changed }}"
+          IS_SNAPSHOT="${{ steps.version-check.outputs.is_snapshot }}"
+          VERSION_VALID="${{ steps.version-check.outputs.version_valid }}"
+          
+          echo "=== Build Decision ==="
+          echo "Is new branch: $IS_NEW_BRANCH"
+          echo "Version changed: $VERSION_CHANGED"
+          echo "Is snapshot: $IS_SNAPSHOT"
+          echo "Version valid: $VERSION_VALID"
+          
+          # 场景1: 新分支 → 构建
+          if [ "$IS_NEW_BRANCH" == "true" ]; then
+            echo "✅ Scenario 1: New branch detected, will build"
+            exit 0
+          fi
+          
+          # 场景2: 已有分支 + 版本号不变 → 跳过
+          if [ "$VERSION_CHANGED" == "false" ]; then
+            echo "⏭️ Scenario 2: Version unchanged, skipping build"
+            exit 0
+          fi
+          
+          # 场景3: 已有分支 + 版本号变化 → 构建
+          if [ "$VERSION_CHANGED" == "true" ]; then
+            echo "✅ Scenario 3: Version changed, will build"
+            exit 0
+          fi
+
+      - name: Set up JDK 17
+        if: steps.version-check.outputs.is_snapshot != 'true' && steps.version-check.outputs.version_valid == 'true' && (steps.version-check.outputs.is_new_branch == 'true' || steps.version-check.outputs.version_changed == 'true')
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          server-id: central
+          server-username: OSSRH_USERNAME
+          server-password: OSSRH_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+
+      - name: Skip if SNAPSHOT version
+        if: steps.version-check.outputs.is_snapshot == 'true'
+        run: |
+          echo "SNAPSHOT version detected, skipping publish to Maven Central"
+          exit 0
+
+      - name: Validate version format
+        if: steps.version-check.outputs.version_valid == 'false' && (steps.version-check.outputs.is_new_branch == 'true' || steps.version-check.outputs.version_changed == 'true')
+        run: |
+          echo "Invalid version format: ${{ steps.version-check.outputs.current_version }}"
+          echo "Expected format: X.Y.Z (e.g., 1.1.2)"
+          exit 1
+
+      - name: Build and publish to Maven Central
+        if: steps.version-check.outputs.is_snapshot != 'true' && steps.version-check.outputs.version_valid == 'true' && (steps.version-check.outputs.is_new_branch == 'true' || steps.version-check.outputs.version_changed == 'true')
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          echo "Publishing version ${{ steps.version-check.outputs.current_version }} to Maven Central"
+          mvn clean deploy -DskipTests \
+            -Dgpg.keyname=$GPG_KEYNAME \
+            -Dgpg.passphrase=$GPG_PASSPHRASE \
+            -Dgpg.executable=gpg \
+            --batch-mode \
+            --activate-profiles release
+
+      - name: Publish summary
+        if: steps.version-check.outputs.is_snapshot != 'true' && steps.version-check.outputs.version_valid == 'true' && (steps.version-check.outputs.is_new_branch == 'true' || steps.version-check.outputs.version_changed == 'true')
+        run: |
+          echo "✅ Successfully published version ${{ steps.version-check.outputs.current_version }} to Maven Central"
+          echo "Note: It may take a few minutes to a few hours for the artifact to be available on Maven Central"
